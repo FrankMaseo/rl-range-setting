@@ -1,3 +1,5 @@
+--Querying the UniV3 price data on an hourly basis, the current model training was done using daily data from a different source
+
 WITH swaps as (
   SELECT 
   DATE_TRUNC('hour', block_timestamp) as date_hour,
