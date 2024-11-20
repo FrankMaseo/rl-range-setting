@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def backtest_model(env, model, chart_title=None):
+def backtest_model(env, model, chart_title=None, show_plots=True, print_report=True):
     env._eval()
     
     timestamps = []
@@ -9,7 +9,6 @@ def backtest_model(env, model, chart_title=None):
     lower_bound_series = []
     upper_bound_series = []
     data = []
-    
     
     obs, _ = env.reset()
 
@@ -47,19 +46,23 @@ def backtest_model(env, model, chart_title=None):
 
     df_results = env.price_data.copy()
     df_results[liq_columns+['rewards']] = df_results_flat[liq_columns+['rewards']]
-    df_results.plot(y=['close', 'liquidity_range_low', 'liquidity_range_high'], title=f'{additional_text}Price chart with predicted ranges' , figsize=(30,18))
     df_results['cum_rewards'] = df_results.rewards.cumsum()
-    df_results.plot( y='cum_rewards', title=f'{additional_text}Total rewards over time', figsize=(10,6))
-
+    
     df_results['range_width'] = df_results.liquidity_range_high-df_results.liquidity_range_low
     df_results['max_range_width'] = env.max_range_width
-
-    df_results.plot(y=['range_width', 'max_range_width'], title=f'{additional_text}Range width over time')
-    print(f'{additional_text}Total range changes over {df_results_raw.to_step.max() - df_results_raw.from_step.min()} days: {df_results_raw.liquidity_range_low.count()}')
-    print(f'{additional_text}Average liquidity lifespan: {(df_results_raw.to_step.max() - df_results_raw.from_step.min())/df_results_raw.liquidity_range_low.count()} days')
+    
+    if show_plots: 
+        df_results.plot(y=['close', 'liquidity_range_low', 'liquidity_range_high'], title=f'{additional_text}Price chart with predicted ranges' , figsize=(30,18))
+        df_results.plot(y='cum_rewards', title=f'{additional_text}Total rewards over time', figsize=(10,6))
+        df_results.plot(y=['range_width', 'max_range_width'], title=f'{additional_text}Range width over time')
+    
+    if print_report:
+        print(f'{additional_text}Total range changes over {df_results_raw.to_step.max() - df_results_raw.from_step.min()} days: {df_results_raw.liquidity_range_low.count()}')
+        print(f'{additional_text}Average liquidity lifespan: {(df_results_raw.to_step.max() - df_results_raw.from_step.min())/df_results_raw.liquidity_range_low.count()} days')
     
     total_rewards = df_results_raw.total_rewards.sum()
     range_changes = df_results_raw.liquidity_range_low.count()
     total_periods = df_results_raw.to_step.max() - df_results_raw.from_step.min()
+    avg_range_width = df_results['range_width'].mean()
     
-    return total_rewards, range_changes, total_periods
+    return total_rewards, range_changes, total_periods, avg_range_width
